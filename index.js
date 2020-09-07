@@ -7,7 +7,6 @@ client.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 const audioFiles = fs.readdirSync('./audio').filter(file => file.endsWith('.mp3'));
 
-
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 
