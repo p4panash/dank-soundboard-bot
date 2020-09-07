@@ -7,6 +7,7 @@ client.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 const audioFiles = fs.readdirSync('./audio').filter(file => file.endsWith('.mp3'));
 
+
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 
@@ -21,18 +22,21 @@ client.once('ready', () => {
 client.on('message', async message => {
 	if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-	let connection;
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
 	const command = args.shift().toLowerCase();
 
-	if (message.member.voice.channel) {
-		console.log('connected to voice chat');
-		connection = await message.member.voice.channel.join();
-	} if (command == 'ping') {
+	if (command == 'ping') {
 		client.commands.get('ping').execute(message, args);
 	}
 	else if (audioFiles.includes(`${command}.mp3`)) {
-		play(connection, command);
+		if (message.member.voice.channel) {
+			console.log('connected to voice chat');
+			const connection = await message.member.voice.channel.join();
+			play(connection, command);
+		}
+		else {
+			message.channel.send('You are not connected to the voice chat !');
+		}
 	}
 });
 
