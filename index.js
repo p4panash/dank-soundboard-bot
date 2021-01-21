@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const fs = require('fs');
-const { play } = require('./commands/helpers/play.js');
+const play = require('./commands/helpers/play.js');
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -9,6 +9,7 @@ const audioFiles = fs.readdirSync('./audio').filter(file => file.endsWith('.mp3'
 const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/discord_bot', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 const UserInput = require('./models/UserInput.js')
+const ChannelQueue = require('./models/ChannelQueue.js')
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
@@ -31,32 +32,38 @@ client.on('message', async message => {
 	if (!message.content.startsWith(prefix) || message.author.bot) return;
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
 	const command = args.shift().toLowerCase();
+	const voiceChannel = message.member.voice.channel;
 
 	if (command == 'ping') {
 		client.commands.get('ping').execute(message, args);
 	}
 	else if (audioFiles.includes(`${command}.mp3`)) {
-		if (message.member.voice.channel) {
+		if (voiceChannel) {
 			let user_id = message.author.id
 			let channel_id = message.channel.id
 			user_input = await UserInput.findOne({ user_id: user_id, channel_id: channel_id})
 
 			if (user_input == null || user_input.message_count < 2) {
-				const connection = await message.member.voice.channel.join();
-				console.log('connected to voice chat');
 				input = await UserInput.findOneAndUpdate(
 					{user_id: user_id, channel_id: channel_id}, {$inc: {message_count: 1}}, {new: true, upsert: true}
 				);
-
-				play(connection, command, user_id, channel_id);
-
+				
+				if (!client.voice.connections.some(conn => conn.channel.id == voiceChannel.id)) {
+					const connection = await voiceChannel.join();
+					console.log('connected to voice chat');
+					play(connection, command, channel_id);
+				} else {
+					console.log(`Enqueuing ${command}`);
+					enqueue = new ChannelQueue({channel_id: channel_id, command: command, queued_at: Date.now()});
+					enqueue.save();
+				}
 				setTimeout(function () {
 					UserInput.findOneAndUpdate(
 						{ user_id: user_id, channel_id: channel_id }, { $inc: { message_count: -1 } }
 					).exec();
 				}, 10000)
 			} else {
-				message.channel.send(`${message.author.username} slow down :cry: ! Wait a few seconds and try again.`);
+				message.channel.send(`${message.author.username} y u spammin :upside_down: ?`);
 			}
 		}
 		else {
