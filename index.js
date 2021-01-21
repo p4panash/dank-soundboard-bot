@@ -37,20 +37,27 @@ client.on('message', async message => {
 	}
 	else if (audioFiles.includes(`${command}.mp3`)) {
 		if (message.member.voice.channel) {
-			user_input = await UserInput.findOne({ user_id: message.author.id, channel_id: message.channel.id})
-			if (user_input == null) {
-				input = new UserInput({ user_id: message.author.id, channel_id: message.channel.id, message_count: 1})
-				input.save(function (err) {
-					if (err) return handleError(err);
-					console.log('Saved')
-				});
+			let user_id = message.author.id
+			let channel_id = message.channel.id
+			user_input = await UserInput.findOne({ user_id: user_id, channel_id: channel_id})
+
+			if (user_input == null || user_input.message_count < 2) {
+				const connection = await message.member.voice.channel.join();
+				console.log('connected to voice chat');
+				input = await UserInput.findOneAndUpdate(
+					{user_id: user_id, channel_id: channel_id}, {$inc: {message_count: 1}}, {new: true, upsert: true}
+				);
+
+				play(connection, command, user_id, channel_id);
+
+				setTimeout(function () {
+					UserInput.findOneAndUpdate(
+						{ user_id: user_id, channel_id: channel_id }, { $inc: { message_count: -1 } }
+					).exec();
+				}, 10000)
 			} else {
-				input = await UserInput.findOneAndUpdate({_id: user_input.id}, {$inc: {message_count: 1}}, {new: true})
-				console.log('t')
+				message.channel.send(`${message.author.username} slow down :cry: ! Wait a few seconds and try again.`);
 			}
-			console.log('connected to voice chat');
-			const connection = await message.member.voice.channel.join();
-			play(connection, command);
 		}
 		else {
 			message.channel.send('You are not connected to the voice chat !');
