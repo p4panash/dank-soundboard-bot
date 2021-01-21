@@ -15,7 +15,7 @@ module.exports = function play(connection, filename, channel_id) {
 			if (queued[0] != null) {
 				filename = queued[0].command;
 				ChannelQueue.findOneAndDelete({_id: queued[0].id}).exec();
-				play(connection, filename, queued[0].id)
+				play(connection, filename, queued[0].channel_id)
 			} else {
 				dispatcher.destroy();
 				connection.disconnect();
