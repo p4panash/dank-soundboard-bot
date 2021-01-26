@@ -1,6 +1,9 @@
 const UserInput = require('../models/UserInput.js')
 const ChannelQueue = require('../models/ChannelQueue.js')
 const play = require('./helpers/play.js');
+const config = require('../config.json')
+const MAX_QUEUE_SIZE = config.max_queue_size
+const MAX_MSG_AMOUNT = config.max_message_amount
 
 const fs = require('fs');
 var path = require("path");
@@ -19,7 +22,8 @@ module.exports = {
         let channel_id = message.channel.id
         user_input = await UserInput.findOne({ user_id: user_id, channel_id: channel_id})
 
-        if (user_input == null || user_input.message_count < 2) {
+        // check for spam
+        if (user_input == null || user_input.message_count < MAX_MSG_AMOUNT) {
           input = await UserInput.findOneAndUpdate(
             {user_id: user_id, channel_id: channel_id}, {$inc: {message_count: 1}}, {new: true, upsert: true}
           );
@@ -29,21 +33,27 @@ module.exports = {
             console.log('connected to voice chat');
             play(connection, sound, channel_id);
           } else {
-            console.log(`Enqueuing ${sound}`);
-            enqueue = new ChannelQueue({channel_id: channel_id, command: sound, queued_at: Date.now()});
-            enqueue.save();
+            queue_count = await ChannelQueue.find({channel_id: channel_id}).countDocuments()
+            if (queue_count < MAX_QUEUE_SIZE) {
+              console.log(`Enqueuing ${sound}`);
+              enqueue = new ChannelQueue({channel_id: channel_id, command: sound, queued_at: Date.now()});
+              enqueue.save();
+            } else {
+              message.reply("the queue has reached it's maximum capacity. Wait a few seconds then try again.")
+            }
           }
+          // decreasing the message count
           setTimeout(function () {
             UserInput.findOneAndUpdate(
               { user_id: user_id, channel_id: channel_id }, { $inc: { message_count: -1 } }
             ).exec();
           }, 10000)
         } else {
-          message.channel.send(`${message.author.username} y u spammin :upside_down: ?`);
+          message.reply('y u spammin :upside_down: ?');
         }
       }
       else {
-        message.channel.send('You are not connected to the voice chat !');
+        message.reply('you should join the voice channel :speaking_head:');
       }
     }
   }
