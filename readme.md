@@ -3,6 +3,7 @@
 - mongodb
 ### Dependencies
 - node v12.14.1
+- express
 - opus-tools Windows: choco, Linux: apt
 - ffmpeg from choco Windows: choco, Linux: apt
 - npm module opusscript
