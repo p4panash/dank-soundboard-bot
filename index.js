@@ -39,7 +39,10 @@ client.on('message', async message => {
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
 	const command = args.shift().toLowerCase();
 
-	if (!client.commands.has(command)) return;
+	if (!client.commands.has(command)) {
+		message.reply(`${command} not found :poop:. Type ${prefix} help for more details.`)
+		return;
+	} 
 
 	try {
 		client.commands.get(command).execute(message, args, client);

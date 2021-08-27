@@ -55,6 +55,8 @@ module.exports = {
       else {
         message.reply('you should join the voice channel :speaking_head:');
       }
+    } else {
+      message.reply("I can't find that sound :smiling_face_with_tear: \nVisit https://p4panash.github.io/dank-soundboard-site/commands for a list of available sounds.")
     }
   }
 }
