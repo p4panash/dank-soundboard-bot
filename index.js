@@ -76,11 +76,10 @@ const buildResponse = (start, end) => {
 }
 
 app.get('/commands', (req, res) => {
-	const per_page = req.query.per_page;
-	const page = req.query.page;
+	const per_page = parseInt(req.query.per_page);
+	const page = parseInt(req.query.page);
 	var start = (page - 1) * per_page;
 	var end = start + per_page;
-
 	response = buildResponse(start, end);
 
   res.json(response);
