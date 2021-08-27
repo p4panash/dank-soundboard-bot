@@ -1,6 +1,7 @@
 // Discord Bot Initializations
+require('dotenv').config()
 const Discord = require('discord.js');
-const { prefix, token, server_uri, port } = require('./config.json');
+const { prefix } = require('./config.json');
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 // Server Initializations
@@ -13,7 +14,8 @@ const fs = require('fs');
 const path = require("path");
 
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost/discord_bot', { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/discord_bot',
+ { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function () {
@@ -47,7 +49,7 @@ client.on('message', async message => {
 	}
 });
 
-client.login(token);
+client.login(process.env.TOKEN);
 
 app.use(cors({
 	origin: "*"
@@ -87,7 +89,7 @@ app.get('/audio', (req, res) => {
 	res.download(file);
 })
 
-app.listen(port, () => {
-	console.log(`app listening at http://localhost:${port}`)
+app.listen(process.env.PORT || 3000, () => {
+	console.log(`app listening at port ${process.env.PORT}`)
 	audioFiles = fs.readdirSync(path.join(__dirname, '/', 'audio')).filter(file => file.endsWith('.mp3')).map(x => x.split('.')[0]);
 });

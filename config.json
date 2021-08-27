@@ -1,0 +1,5 @@
+{
+    "prefix": "sound",
+    "max_queue_size": 7,
+    "max_message_amount": 2
+}
