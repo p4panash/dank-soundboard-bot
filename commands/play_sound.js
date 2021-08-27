@@ -13,8 +13,16 @@ module.exports = {
   name: 'play',
   description: 'Play the given sound',
   async execute(message, args, client) {
+    let sound;
     const voiceChannel = message.member.voice.channel;
-    const sound = args.shift().toLowerCase();
+    let arg = args.shift()
+
+    if (arg != null) {
+      sound = arg.toLocaleLowerCase()
+    } else {
+      message.reply("pls type the sound name :pleading_face:")
+      return;
+    }
 
     if (audioFiles.includes(`${sound}.mp3`)) {
       if (voiceChannel) {
